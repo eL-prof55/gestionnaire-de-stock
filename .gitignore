@@ -1,0 +1,10 @@
+config/db.php
+assets/uploads/articles/*
+!assets/uploads/articles/.githeep
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+/vendor/[]

@@ -1,53 +1,43 @@
 <?php
-require_once __DIR__ . '/config/db.example.php';
+require_once __DIR__ . '/../config/db.php';
 
-class categories {
+class Categorie {
     private $pdo;
 
-    public function__construct() {
+    public function __construct() {
         global $pdo;
         $this->pdo = $pdo;
     }
-   
-    //Recuperer toutes les categories
 
-    public function getall() {
-        $stmt = $this->pdo->prepare("SELECT * FROM categories order by nom ASC");
+    public function getAll() {
+        $stmt = $this->pdo->query("SELECT * FROM categories ORDER BY nom ASC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    //creer un categorie
-
-    public function create($nom) {
-        $stmt = $this->pdo->prepare("INSERT INTO categories (nom) VALUES (:nom)");
-        $stmt->bindParam(':nom', $nom); //
-        return $stmt->execute();
+    public function getById($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM categories WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    //modifier une categorie
-
-    public function update($id, $nom) {
-        $stmt = $this->pdo->prepare("UPDATE categories SET nom = :nom WHERE id = :id");
-        $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':nom', $nom);
-        return $stmt->execute();
+    public function create($nom, $description = '') {
+        $stmt = $this->pdo->prepare("INSERT INTO categories (nom, description) VALUES (?, ?)");
+        return $stmt->execute([$nom, $description]);
     }
 
-    //supprimer une categorie
+    public function update($id, $nom, $description = '') {
+        $stmt = $this->pdo->prepare("UPDATE categories SET nom = ?, description = ? WHERE id = ?");
+        return $stmt->execute([$nom, $description, $id]);
+    }
 
     public function delete($id) {
-        $stmt = $this->pdo->prepare("DELETE FROM categories WHERE id = :id");
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
+        $stmt = $this->pdo->prepare("DELETE FROM categories WHERE id = ?");
+        return $stmt->execute([$id]);
     }
 
-    //compter les articles dans une categorie
-    //pour empercher la suppression d'une categorie qui contient des articles
-
     public function compterAR($id) {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM articles WHERE categorie_id = :id");
-        $stmt->bindParam(':id', $id);
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM articles WHERE id_categorie = ?");
         $stmt->execute([$id]);
-        return $stmt->fetchcolumn();
+        return $stmt->fetchColumn();
     }
 }

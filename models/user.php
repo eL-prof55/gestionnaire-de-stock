@@ -32,10 +32,33 @@ class user{
             ':role' => $role
         ]);
     }
+    //trouver utilisatuer par email
+    //utiliser la connexion
+    //retourne les infos de l'utilisateur ou false si pas trouve ou inactif
     public function trouverParEmail($email){
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = :email AND actif = 1");
         $stmt->execute([':email' => $email]);
         return $stmt->fetch();
     }
 
+    //recupere tous les gestionnaires, utiliser le superadmin pour la gestion des comptes, retourne un tableau d'utilisateurs
+
+    public function tousLesGestionnaires(){
+        $stmt = $this->pdo->prepare("SELECT id,nom,email,actif,created_at  FROM users WHERE role = 'gestionnaire' ORDER BY created_at DESC");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // ACTIVE ou desactive un compte gestionnaire, $actif =1 pour activer, 0 pour desactiver, retourne true si l'operation a reussi et false sinon
+    public function changerStatut($id, $actif){
+        $stmt = $this->pdo->prepare("UPDATE users SET actif = :actif WHERE id = :id /*AND role = 'gestionnaire'*/");
+        return $stmt->execute([':actif' => $actif, ':id' => $id]);
+    }
+
+    //verifie si unemail existe deja en BDD, retourne true si l'email existe et false sinon, evite les doublons
+    public function emailExiste($email){
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
+        $stmt->execute([':email' => $email]);
+        return $stmt->fetchColumn() > 0;
+    }
 }

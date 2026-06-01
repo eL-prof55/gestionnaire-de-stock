@@ -13,7 +13,6 @@ class Fournisseur {
         $stmt = $this->pdo->query("SELECT * FROM fournisseurs ORDER BY nom ASC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
     public function getById($id) {
         $stmt = $this->pdo->prepare("SELECT * FROM fournisseurs WHERE id = ?");
         $stmt->execute([$id]);

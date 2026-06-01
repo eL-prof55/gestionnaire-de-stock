@@ -1,96 +1,150 @@
 <?php
-require_once 'models/article.php';
-require_once 'models/categorie.php';
-require_once 'models/fournisseur.php';
+require_once __DIR__ . '/../models/article.php';
+require_once __DIR__ . '/../models/categorie.php';
+require_once __DIR__ . '/../models/fournisseur.php';
 
 class ArticleController {
     private $model;
-    private $pdo;
+    private $modelCat;
+    private $modelFourn;
 
-    public function __construct($pdo) {
-        $this->model = new Article($pdo);
-        $this->pdo = $pdo;
+    public function __construct() {
+        $this->model = new Article();
+        $this->modelCat = new Categorie();
+        $this->modelFourn = new Fournisseur();
     }
 
-    // Afficher la liste des articles
     public function index() {
         $articles = $this->model->getAll();
-        require 'views/articles/index.php';
+        require __DIR__ . '/../views/articles/index.php';
     }
 
-    // Afficher formulaire + traiter la création
     public function create() {
-        $categories = (new Categorie($this->pdo))->getAll();
-        $fournisseurs = (new Fournisseur($this->pdo))->getAll();
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $image = $this->handleUpload();
-            $this->model->create(
-                trim($_POST['nom']),
-                trim($_POST['description'] ?? ''),
-                $_POST['prix_unitaire'],
-                $_POST['quantite'],
-                $_POST['seuil_min'],
-                $image,
-                $_POST['id_categorie'] ?: null,
-                $_POST['id_fournisseur'] ?: null
-            );
-            header('Location: index.php?page=articles');
-            exit;
-        }
-        require 'views/articles/form.php';
+        $categories = $this->modelCat->getAll();
+        $fournisseurs = $this->modelFourn->getAll();
+        require __DIR__ . '/../views/articles/create.php';
     }
 
-    // Afficher formulaire + traiter la modification
     public function edit($id) {
         $article = $this->model->getById($id);
-        $categories = (new Categorie($this->pdo))->getAll();
-        $fournisseurs = (new Fournisseur($this->pdo))->getAll();
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $image = $this->handleUpload() ?? $article['image'];
-            $this->model->update(
-                $id,
-                trim($_POST['nom']),
-                trim($_POST['description'] ?? ''),
-                $_POST['prix_unitaire'],
-                $_POST['quantite'],
-                $_POST['seuil_min'],
-                $image,
-                $_POST['id_categorie'] ?: null,
-                $_POST['id_fournisseur'] ?: null
-            );
+        if (!$article) {
             header('Location: index.php?page=articles');
             exit;
         }
-        require 'views/articles/form.php';
+        $categories = $this->modelCat->getAll();
+        $fournisseurs = $this->modelFourn->getAll();
+        require __DIR__ . '/../views/articles/edit.php';
     }
 
-    // Supprimer un article
+    public function store($data, $files) {
+        if (empty($data['nom']) || empty($data['prix_unitaire']) || !isset($data['quantite'])) {
+            return ['success' => false, 'message' => 'Les champs nom, prix et quantité sont obligatoires.'];
+        }
+
+        if ($this->model->exists($data['nom'])) {
+            return ['success' => false, 'message' => 'Un article avec ce nom existe déjà.'];
+        }
+
+        $imageName = null;
+        if (!empty($files['image']['tmp_name'])) {
+            $uploadResult = $this->uploadImage($files['image']);
+            if (!$uploadResult['success']) {
+                return $uploadResult;
+            }
+            $imageName = $uploadResult['filename'];
+        }
+
+        $articleData = [
+            'nom' => $data['nom'],
+            'description' => $data['description'] ?? '',
+            'prix_unitaire' => $data['prix_unitaire'],
+            'quantite' => $data['quantite'],
+            'seuil_min' => $data['seuil_min'] ?? 5,
+            'image' => $imageName,
+            'id_categorie' => !empty($data['id_categorie']) ? $data['id_categorie'] : null,
+            'id_fournisseur' => !empty($data['id_fournisseur']) ? $data['id_fournisseur'] : null
+        ];
+
+        $result = $this->model->create($articleData);
+        if ($result) {
+            return ['success' => true, 'message' => 'Article créé avec succès.'];
+        }
+        return ['success' => false, 'message' => 'Erreur lors de la création.'];
+    }
+
+    public function update($id, $data, $files) {
+        $article = $this->model->getById($id);
+        if (!$article) {
+            return ['success' => false, 'message' => 'Article non trouvé.'];
+        }
+
+        $imageName = $article['image'];
+
+        if (!empty($files['image']['tmp_name'])) {
+            $uploadResult = $this->uploadImage($files['image']);
+            if (!$uploadResult['success']) {
+                return $uploadResult;
+            }
+            if ($imageName && file_exists(__DIR__ . '/../assets/uploads/articles/' . $imageName)) {
+                unlink(__DIR__ . '/../assets/uploads/articles/' . $imageName);
+            }
+            $imageName = $uploadResult['filename'];
+        }
+
+        $articleData = [
+            'nom' => $data['nom'],
+            'description' => $data['description'] ?? '',
+            'prix_unitaire' => $data['prix_unitaire'],
+            'quantite' => $data['quantite'],
+            'seuil_min' => $data['seuil_min'] ?? 5,
+            'image' => $imageName,
+            'id_categorie' => !empty($data['id_categorie']) ? $data['id_categorie'] : null,
+            'id_fournisseur' => !empty($data['id_fournisseur']) ? $data['id_fournisseur'] : null
+        ];
+
+        $result = $this->model->update($id, $articleData);
+        if ($result) {
+            return ['success' => true, 'message' => 'Article modifié avec succès.'];
+        }
+        return ['success' => false, 'message' => 'Erreur lors de la modification.'];
+    }
+
     public function delete($id) {
         $article = $this->model->getById($id);
-        if ($article['image']) {
-            $path = 'assets/uploads/articles/' . $article['image'];
-            if (file_exists($path)) unlink($path);
+        if (!$article) {
+            return ['success' => false, 'message' => 'Article non trouvé.'];
         }
-        $this->model->delete($id);
-        header('Location: index.php?page=articles');
-        exit;
+
+        if ($article['image'] && file_exists(__DIR__ . '/../assets/uploads/articles/' . $article['image'])) {
+            unlink(__DIR__ . '/../assets/uploads/articles/' . $article['image']);
+        }
+
+        $result = $this->model->delete($id);
+        if ($result) {
+            return ['success' => true, 'message' => 'Article supprimé avec succès.'];
+        }
+        return ['success' => false, 'message' => 'Erreur lors de la suppression.'];
     }
 
-    // Gérer l'upload d'image
-    private function handleUpload() {
-        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-            return null;
-        }
-        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        $mime = mime_content_type($_FILES['image']['tmp_name']);
-        if (!in_array($mime, $allowed)) return null;
-        if ($_FILES['image']['size'] > 2 * 1024 * 1024) return null;
+    private function uploadImage($file) {
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        $maxSize = 2 * 1024 * 1024;
 
-        $nomFichier = 'article_' . time() . '_' . basename($_FILES['image']['name']);
-        $destination = 'assets/uploads/articles/' . $nomFichier;
-        move_uploaded_file($_FILES['image']['tmp_name'], $destination);
-        return $nomFichier;
+        if (!in_array($file['type'], $allowedTypes)) {
+            return ['success' => false, 'message' => 'Format non valide. Utilisez JPG, PNG ou WebP.'];
+        }
+
+        if ($file['size'] > $maxSize) {
+            return ['success' => false, 'message' => 'Image trop lourde. Taille maximum : 2 Mo.'];
+        }
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'article_' . time() . '_' . uniqid() . '.' . $extension;
+        $uploadPath = __DIR__ . '/../assets/uploads/articles/' . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+            return ['success' => true, 'filename' => $filename];
+        }
+        return ['success' => false, 'message' => 'Erreur lors de l'upload.'];
     }
 }

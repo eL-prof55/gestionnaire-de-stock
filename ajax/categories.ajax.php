@@ -1,62 +1,34 @@
 <?php
-session_start();
-require_once '../config/db.php';
-require_once '../models/categorie.php';
+require_once __DIR__ . '/../controllers/categoriecontroller.php';
 
 header('Content-Type: application/json');
 
-$model = new Categorie($pdo);
-$action = $_POST['action'] ?? $_GET['action'] ?? '';
+$controller = new CategorieController();
+$action = $_GET['action'] ?? '';
 
 switch ($action) {
-
     case 'getAll':
-        $data = $model->getAll();
-        echo json_encode(['success' => true, 'data' => $data]);
+        $categories = $controller->model->getAll();
+        echo json_encode(['success' => true, 'data' => $categories]);
         break;
 
     case 'create':
-        $nom = trim($_POST['nom'] ?? '');
-        $description = trim($_POST['description'] ?? '');
-        if (empty($nom)) {
-            echo json_encode(['success' => false, 'message' => 'Le nom est obligatoire']);
-            break;
-        }
-        $ok = $model->create($nom, $description);
-        echo json_encode([
-            'success' => $ok,
-            'message' => $ok ? 'Catégorie créée' : 'Erreur lors de la création'
-        ]);
+        $result = $controller->store($_POST);
+        echo json_encode($result);
         break;
 
     case 'update':
-        $id = $_POST['id'] ?? null;
-        $nom = trim($_POST['nom'] ?? '');
-        $description = trim($_POST['description'] ?? '');
-        if (!$id || empty($nom)) {
-            echo json_encode(['success' => false, 'message' => 'Données manquantes']);
-            break;
-        }
-        $ok = $model->update($id, $nom, $description);
-        echo json_encode([
-            'success' => $ok,
-            'message' => $ok ? 'Catégorie modifiée' : 'Erreur lors de la modification'
-        ]);
+        $id = $_POST['id'] ?? 0;
+        $result = $controller->update($id, $_POST);
+        echo json_encode($result);
         break;
 
     case 'delete':
-        $id = $_POST['id'] ?? null;
-        if (!$id) {
-            echo json_encode(['success' => false, 'message' => 'ID manquant']);
-            break;
-        }
-        $ok = $model->delete($id);
-        echo json_encode([
-            'success' => $ok,
-            'message' => $ok ? 'Catégorie supprimée' : 'Erreur lors de la suppression'
-        ]);
+        $id = $_POST['id'] ?? 0;
+        $result = $controller->delete($id);
+        echo json_encode($result);
         break;
 
     default:
-        echo json_encode(['success' => false, 'message' => 'Action inconnue']);
+        echo json_encode(['success' => false, 'message' => 'Action non reconnue.']);
 }

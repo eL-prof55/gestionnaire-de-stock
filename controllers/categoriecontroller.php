@@ -1,48 +1,66 @@
 <?php
-require_once 'models/categorie.php';
+require_once __DIR__ . '/../models/categorie.php';
 
 class CategorieController {
     private $model;
 
-    public function __construct($pdo) {
-        $this->model = new Categorie($pdo);
+    public function __construct() {
+        $this->model = new Categorie();
     }
 
-    // Afficher la liste des catégories
     public function index() {
         $categories = $this->model->getAll();
-        require 'views/categories/index.php';
+        require __DIR__ . '/../views/categories/index.php';
     }
 
-    // Afficher le formulaire + traiter la création
-    public function create() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $nom = trim($_POST['nom']);
-            $description = trim($_POST['description'] ?? '');
-            $this->model->create($nom, $description);
-            header('Location: index.php?page=categories');
-            exit;
+    public function store($data) {
+        if (empty($data['nom'])) {
+            return ['success' => false, 'message' => 'Le nom de la catégorie est obligatoire.'];
         }
-        require 'views/categories/form.php';
-    }
 
-    // Afficher le formulaire + traiter la modification
-    public function edit($id) {
-        $categorie = $this->model->getById($id);
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $nom = trim($_POST['nom']);
-            $description = trim($_POST['description'] ?? '');
-            $this->model->update($id, $nom, $description);
-            header('Location: index.php?page=categories');
-            exit;
+        $all = $this->model->getAll();
+        foreach ($all as $cat) {
+            if (strtolower($cat['nom']) === strtolower($data['nom'])) {
+                return ['success' => false, 'message' => 'Cette catégorie existe déjà.'];
+            }
         }
-        require 'views/categories/form.php';
+
+        $result = $this->model->create($data['nom'], $data['description'] ?? '');
+        if ($result) {
+            return ['success' => true, 'message' => 'Catégorie créée avec succès.'];
+        }
+        return ['success' => false, 'message' => 'Erreur lors de la création.'];
     }
 
-    // Supprimer une catégorie
+    public function update($id, $data) {
+        if (empty($data['nom'])) {
+            return ['success' => false, 'message' => 'Le nom de la catégorie est obligatoire.'];
+        }
+
+        $all = $this->model->getAll();
+        foreach ($all as $cat) {
+            if (strtolower($cat['nom']) === strtolower($data['nom']) && $cat['id'] != $id) {
+                return ['success' => false, 'message' => 'Cette catégorie existe déjà.'];
+            }
+        }
+
+        $result = $this->model->update($id, $data['nom'], $data['description'] ?? '');
+        if ($result) {
+            return ['success' => true, 'message' => 'Catégorie modifiée avec succès.'];
+        }
+        return ['success' => false, 'message' => 'Erreur lors de la modification.'];
+    }
+
     public function delete($id) {
-        $this->model->delete($id);
-        header('Location: index.php?page=categories');
-        exit;
+        $count = $this->model->compterAR($id);
+        if ($count > 0) {
+            return ['success' => false, 'message' => 'Impossible : cette catégorie contient ' . $count . ' article(s).'];
+        }
+
+        $result = $this->model->delete($id);
+        if ($result) {
+            return ['success' => true, 'message' => 'Catégorie supprimée avec succès.'];
+        }
+        return ['success' => false, 'message' => 'Erreur lors de la suppression.'];
     }
 }

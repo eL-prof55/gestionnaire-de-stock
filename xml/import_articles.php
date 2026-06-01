@@ -1,5 +1,5 @@
 <?php
-require_once '../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['fichier_xml'])) {
     header('Location: ../index.php?page=rapports');

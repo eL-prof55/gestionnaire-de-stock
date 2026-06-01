@@ -10,7 +10,16 @@ class CategorieController {
 
     public function index() {
         $categories = $this->model->getAll();
+        $controller = $this;
         require __DIR__ . '/../views/categories/index.php';
+    }
+
+    public function getAllCategories() {
+        return $this->model->getAll();
+    }
+
+    public function compterArticles($id) {
+        return $this->model->compterAR($id);
     }
 
     public function store($data) {

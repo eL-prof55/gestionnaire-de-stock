@@ -1,6 +1,6 @@
 <?php
-require_once 'models/user.php';
-require_once 'config/db.php';
+require_once __DIR__ . '/../models/user.php';
+require_once __DIR__ . '/../config/db.php';
 
 class authController{
 
@@ -10,17 +10,17 @@ class authController{
 
      public function __construct(){
         global $pdo;
-        $this->userModel=new User ($pdo);
+        $this->userModel = new user($pdo);
      }
 
      //affiche la page d'inscription, si un superadmin existe deja  -> login
 
     public function afficherInscription(){
-        if ($this->userModel->superAdminExiste()){
+        if ($this->userModel->superadminExiste()){
             header('Location: ' .BASE_URL . 'login');
             exit();
         }
-        require_once __DIR__ . 'views/auth/register.php';
+        require_once __DIR__ . '/../views/auth/register.php';
     }
 
     //traite le formulaire d'inscription
@@ -73,7 +73,7 @@ class authController{
             header('Location: ' . BASE_URL . 'login');
             exit();
         } else {
-            $_SESSION['erreur '] = "Une erreur est survenue, reesayer.";
+            $_SESSION['erreur'] = "Une erreur est survenue, reesayer.";
             header('Location: ' . BASE_URL . 'register');
             exit();
         }

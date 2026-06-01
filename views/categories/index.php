@@ -54,7 +54,7 @@ require __DIR__ . '/../layout/header.php';
                     <td class="cat-desc"><?= htmlspecialchars($cat['description'] ?? '') ?></td>
                     <td>
                         <span class="badge badge-info">
-                            <?= $controller->model->compterAR($cat['id']) ?>
+                            <?= $controller->compterArticles($cat['id']) ?>
                         </span>
                     </td>
                     <td><?= date('d/m/Y', strtotime($cat['created_at'])) ?></td>

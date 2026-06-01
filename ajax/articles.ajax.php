@@ -8,7 +8,7 @@ $action = $_GET['action'] ?? '';
 
 switch ($action) {
     case 'getAll':
-        $articles = $controller->model->getAll();
+        $articles = $controller->getAllArticles();
         echo json_encode(['success' => true, 'data' => $articles]);
         break;
 

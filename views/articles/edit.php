@@ -92,7 +92,7 @@ require __DIR__ . '/../layout/header.php';
                            id="image-input" class="file-input">
                     <div class="upload-placeholder" id="upload-placeholder">
                         <i class="icon-upload"></i>
-                        <span><?= $article['image'] ? 'Remplacer l'image' : 'Ajouter une image' ?></span>
+                        <span><?= $article['image'] ? "Remplacer l'image" : 'Ajouter une image' ?></span>
                         <small>JPG, PNG, WebP • Max 2 Mo • Laisser vide pour conserver l'actuelle</small>
                     </div>
                     <div id="image-preview" class="image-preview"></div>

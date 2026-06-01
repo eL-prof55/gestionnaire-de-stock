@@ -19,6 +19,10 @@ class ArticleController {
         require __DIR__ . '/../views/articles/index.php';
     }
 
+    public function getAllArticles() {
+        return $this->model->getAll();
+    }
+
     public function create() {
         $categories = $this->modelCat->getAll();
         $fournisseurs = $this->modelFourn->getAll();
@@ -145,6 +149,6 @@ class ArticleController {
         if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
             return ['success' => true, 'filename' => $filename];
         }
-        return ['success' => false, 'message' => 'Erreur lors de l'upload.'];
+        return ['success' => false, 'message' => 'Erreur lors de l\'upload.'];    
     }
 }

@@ -1,13 +1,14 @@
 <?php
-require_once '/../models/user.php';
-require_once '/../config/db.php';
+require_once 'models/user.php';
+require_once 'config/db.php';
 
 class authController{
-    private $userMODEL;
+
+    private $userModel;
 
      //creer linstance du model user
 
-     public function _construct(){
+     public function __construct(){
         global $pdo;
         $this->userModel=new User ($pdo);
      }
@@ -15,11 +16,11 @@ class authController{
      //affiche la page d'inscription, si un superadmin existe deja  -> login
 
     public function afficherInscription(){
-        if ($this->userModel->superadminExiste()){
+        if ($this->userModel->superAdminExiste()){
             header('Location: ' .BASE_URL . 'login');
             exit();
         }
-        require_once __DIR__ . '/../views/auth/register.php';
+        require_once __DIR__ . 'views/auth/register.php';
     }
 
     //traite le formulaire d'inscription
@@ -118,7 +119,7 @@ class authController{
     }
 
     //deconnexion , detruit la session
-    public function deconnecter{
+    public function deconnecter(){
         session_destroy();
         header('Location: ' . BASE_URL . 'login');
         exit();
